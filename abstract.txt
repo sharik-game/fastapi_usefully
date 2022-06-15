@@ -1,0 +1,37 @@
+FastAPI usefully
+...
+@app.get("/sm/{sm_id}")
+async def read_sm(sm_id):
+	return ("sm_id": sm_id)
+input - http://localhost:8000/sm/eat
+answer - {"sm_id": "eat"}
+Also you can write
+...
+async def read_number(number: int):
+	...
+if you'll write string or float you'll give valid error
+This example shows how to use parameters:
+from enum import Enum
+
+from fastapi import FastAPI
+
+
+class ModelName(str, Enum):
+    alexnet = "alexnet"
+    resnet = "resnet"
+    lenet = "lenet"
+
+
+app = FastAPI()
+
+
+@app.get("/models/{model_name}")
+async def get_model(model_name: ModelName):
+    if model_name == ModelName.alexnet:
+        return {"model_name": model_name, "message": "Deep Learning FTW!"}
+
+    if model_name.value == "lenet":
+        return {"model_name": model_name, "message": "LeCNN all the images"}
+
+    return {"model_name": model_name, "message": "Have some residuals"}
+
