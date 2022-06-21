@@ -138,6 +138,12 @@ async def create_item(item_id: int, item: Item):
     return {"item_id": item_id, **item.dict()}
 
 
+
+
+
+
+			QUERY PARAMETERS
+
 You can also use query parameters for looking a leight.
 For example:
 from fastapi import FastAPI, Query
@@ -197,4 +203,112 @@ If you want to make a query parameter "item-query" or so-so. You can use this co
 async def read_items(q: str | None = Query(default=None, alias="item-query")):
 	...
 
+
+If you want to write that the query parameter was deprecated you can write this code:
+...
+async def read_items(
+    q: str
+    | None = Query(
+        default=None,
+        alias="item-query",
+        title="Query string",
+        description="Query string for the items to search in the database that have a good match",
+        min_length=3,
+        max_length=50,
+        regex="^fixedquery$",
+        deprecated=True,
+    )
+):
+	...
+
+If you don't want to include your querybparameter in schema you can write this code:
+...
+async def read_items(
+    hidden_query: str | None = Query(default=None, include_in_schema=False)
+):
+	...
+
+
+
+
+			PATH PARAMETERS
+
+
+You also can to write a title to the path parameter:
+from fastapi import FastAPI, Path, Query
+...
+async def read_items(
+    item_id: int = Path(title="The ID of the item to get"),
+    q: str | None = Query(default=None, alias="item-query"),
+):
+	...
+
+If you want to write that the query parameter is required but you don't want to use Query you can write this code:
+...
+app.get("/items/{item_id}")
+async def read_items(*, item_id: int = Path(title="The ID of the item to get"), q: str):
+	...
+
+You also can write you path integer number in range.
+For example:
+...
+@app.get("/items/{item_id}")
+async def read_items(
+    *, item_id: int = Path(title="The ID of the item to get", ge=1), q: str
+):
+	...
+Here the number has to be integer and more or qual than 1.
+gt: more than.
+le: less or qual than.
+lt: lass than.
+Of course you can combine gt, le and ge.
+This parameters also work with float.
+
+
+							BODY
+
+You also can mix Body, path and query parameters.
+For example:
+...
+from pydantic import BaseModel
+...
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+...
+async def update_item(
+    *,
+    item_id: int = Path(title="The ID of the item to get", ge=0, le=1000),
+    q: str | None = None,
+    item: Item | None = None,
+):
+	...
+
+You also can write tow body parameters.
+For example:
+...
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+
+
+class User(BaseModel):
+    username: str
+    full_name: str | None = None
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item, user: User):
+	...
+
+You also can add body dict in the function.
+...
+from fastapi import Body, FastAPI
+...
+async def update_item(item_id: int, item: Item, user: User, importance: int = Body()):
+	...
 
