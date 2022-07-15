@@ -312,3 +312,246 @@ from fastapi import Body, FastAPI
 async def update_item(item_id: int, item: Item, user: User, importance: int = Body()):
 	...
 
+If you want to see JSON you can use embed parameter:
+from fastapi import Body, FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item = Body(embed=True)):
+    results = {"item_id": item_id, "item": item}
+    return results
+
+
+
+					
+
+						Body-Fields
+You can also declare parameters using pydantic field:
+from fastapi import Body, FastAPI
+from pydantic import BaseModel, Field
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = Field(
+        default=None, title="The description of the item", max_length=300
+    )
+    price: float = Field(gt=0, description="The price must be greater than zero")
+    tax: float | None = None
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item = Body(embed=True)):
+    results = {"item_id": item_id, "item": item}
+    return results
+
+You can define a type of subclass:
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+    tags: list = []
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item):
+    results = {"item_id": item_id, "item": item}
+    return results
+
+In python3.10 you can write list so:
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+    tags: list[str] = []
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item):
+    results = {"item_id": item_id, "item": item}
+    return results
+Of course you can write tuples:
+...
+    tags: set[str] = set()
+...
+    ...
+You also can use nested models:
+...
+class Image(BaseModel):
+    url: str
+    name: str
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+    tags: set[str] = set()
+    image: Image | None = None
+...
+If you want to use url you can use pydantic HttpUrl:
+...
+from pydantic import BaseModel, HttpUrl
+
+app = FastAPI()
+
+
+class Image(BaseModel):
+    url: HttpUrl
+    name: str
+...
+You can also use Pydantic models as subtypes of list, set, etc:
+...
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+    tags: set[str] = set()
+    images: list[Image] | None = None
+...
+And JSON Body will be like so:
+{
+    "name": "Foo",
+    "description": "The pretender",
+    "price": 42.0,
+    "tax": 3.2,
+    "tags": [
+        "rock",
+        "metal",
+        "bar"
+    ],
+    "images": [
+        {
+            "url": "http://example.com/baz.jpg",
+            "name": "The Foo live"
+        },
+        {
+            "url": "http://example.com/dave.jpg",
+            "name": "The Baz"
+        }
+    ]
+}
+You also can use dict:
+...
+async def create_index_weights(weights: dict[int, float]):
+    ...
+REMEMBER:
+        JSON key may be ONLY str but pydantic validate it in int.
+
+You can add example JSON schema in the docs:
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "Foo",
+                "description": "A very nice Item",
+                "price": 35.4,
+                "tax": 3.2,
+            }
+        }
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item):
+    results = {"item_id": item_id, "item": item}
+    return results
+You also can do this using example parameter:
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
+
+app = FastAPI()
+
+
+class Item(BaseModel):
+    name: str = Field(example="Foo")
+    description: str | None = Field(default=None, example="A very nice Item")
+    price: float = Field(example=35.4)
+    tax: float | None = Field(default=None, example=3.2)
+
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, item: Item):
+    results = {"item_id": item_id, "item": item}
+    return results
+You can use examples for adding more information:
+summary - short description.
+description - long description.
+value - an example to dict.
+externalValue - alternative to value, a URL pointing to the example.
+
+...
+async def update_item(
+    *,
+    item_id: int,
+    item: Item = Body(
+        examples={
+            "normal": {
+                "summary": "A normal example",
+                "description": "A **normal** item works correctly.",
+                "value": {
+                    "name": "Foo",
+                    "description": "A very nice Item",
+                    "price": 35.4,
+                    "tax": 3.2,
+                },
+            },
+            "converted": {
+                "summary": "An example with converted data",
+                "description": "FastAPI can convert price `strings` to actual `numbers` automatically",
+                "value": {
+                    "name": "Bar",
+                    "price": "35.4",
+                },
+            },
+            "invalid": {
+                "summary": "Invalid data is rejected with an error",
+                "value": {
+                    "name": "Baz",
+                    "price": "thirty five point four",
+                },
+            },
+        },
+    ),
+):
+	...
+
+
