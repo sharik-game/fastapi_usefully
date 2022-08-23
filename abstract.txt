@@ -833,3 +833,21 @@ app = FastAPI()
 async def read_keyword_weights():
     return {"foo": 2.3, "bar": 3.4}
 
+You can upload files using File and UploadFile:
+from fastapi import FastAPI, File, UploadFile
+
+app = FastAPI()
+
+
+@app.post("/files/")
+async def create_file(file: bytes = File()):
+    return {"file_size": len(file)}
+
+
+@app.post("/uploadfile/")
+async def create_upload_file(file: UploadFile):
+    return {"filename": file.filename}
+UploadFile has the next methods:
+* filename - name's file(str)
+* content_type - content type(str)
+* file - let using file like file
